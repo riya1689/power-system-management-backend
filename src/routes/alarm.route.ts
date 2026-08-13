@@ -59,7 +59,7 @@ router.post('/', authorizeRoles(Role.ADMIN, Role.ENGINEER), async (req, res) => 
 
 router.delete('/:id', authorizeRoles(Role.ADMIN, Role.ENGINEER), async (req, res) => {
   try {
-    await prisma.alarm.delete({ where: { id: req.params.id } });
+    await prisma.alarm.delete({ where: { id: req.params.id as string } });
     res.json({ success: true, message: 'Alarm deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to delete alarm' });
