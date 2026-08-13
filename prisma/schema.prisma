@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+enum Role {
+  ADMIN
+  ENGINEER
+  OPERATOR
+}
+enum AlarmOperator {
+  GT
+  LT
+  GTE
+  LTE
+  EQ
+  NEQ
+}
+enum AlarmStatus {
+  NORMAL
+  TRIGGERED
+}
+enum DataLockInterval {
+  TWO_SECONDS
+  FIVE_SECONDS
+}
+model User {
+  id String @id @default(uuid())
+  name String
+  email String @unique
+  password String
+  role Role @default(OPERATOR)
+  permissions UserPermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+}
+
+model Permission {
+  id String @id @default(uuid())
+  name String @unique
+  description String?
+  users UserPermission[]
+  createdAt DateTime @default(now())
+}
+
+model UserPermission {
+  id String @id @default(uuid())
+  userId String
+  permissionId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
+  @@index([userId])
+  @@index([permissionId])
+}
+
+model Parameter {
+  id String @id @default(uuid())
+  name String @unique
+  unit String
+  description String?
+  minValue Float?
+  maxValue Float?
+  alarms Alarm[]
+  dataLockData DataLockData[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Alarm {
+  id String @id @default(uuid())
+  operator AlarmOperator
+  triggerValue Float
+  actionName String
+  status AlarmStatus @default(NORMAL)
+  parameterId String
+  parameter Parameter @relation(fields: [parameterId], references: [id], onDelete: Cascade)
+  events AlarmEvent[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parameterId])
+  @@index([status])
+}
+
+model AlarmEvent {
+  id String @id @default(uuid())
+  alarmId String
+  alarm Alarm @relation(fields: [alarmId], references: [id], onDelete: Cascade)
+  value Float
+  status AlarmStatus
+  triggeredAt DateTime @default(now())
+  @@index([alarmId])
+  @@index([triggeredAt])
+}
+
+model DataLockData {
+  id String @id @default(uuid())
+  parameterId String
+  parameter Parameter @relation(fields: [parameterId], references: [id], onDelete: Cascade)
+  value Float
+  timestamp DateTime @default(now())
+  @@index([parameterId, timestamp])
+  @@index([timestamp])
+}
+
+model DataLockSetting {
+  id String @id @default(uuid())
+  interval DataLockInterval @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
